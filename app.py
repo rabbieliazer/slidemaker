@@ -1,12 +1,13 @@
 import streamlit as st
 import subprocess
 import os
+import base64
 
 # Page Configuration
-st.set_page_config(page_title="Tosh Video Slide Maker", page_icon="🎬")
+st.set_page_config(page_title="Video Slide Maker", page_icon="🎬")
 
 st.title("🎬 Video to Slide Converter")
-st.write("Upload a video to extract a 'slide' every few seconds. Powered by Cloud FFmpeg.")
+st.write("Developed by tosh dvelopers. Upload a video to extract a 'slide' every few seconds.")
 
 # 1. User Inputs
 uploaded_file = st.file_uploader("Choose a video file", type=["mp4", "mov", "avi", "mkv"])
@@ -52,19 +53,30 @@ if uploaded_file is not None:
                 
                 subprocess.run(ffmpeg_cmd, check=True)
 
-                # 4. Prepare for Download
-                # We read the file into memory to ensure the browser gets an MP4, not an HTML error
+                # 4. Prepare for Download (The Base64 Workaround)
+                # Read the file into memory to ensure the browser gets an MP4
                 with open(output_filename, "rb") as f:
                     video_bytes = f.read()
 
+                # Encode the video to base64
+                b64 = base64.b64encode(video_bytes).decode()
+                
+                # Create a raw HTML download link with a custom aesthetic
+                href = f'''
+                <div style="margin-top: 20px; margin-bottom: 20px;">
+                    <a href="data:video/mp4;base64,{b64}" download="converted_slides.mp4" 
+                       style="display: inline-block; padding: 12px 24px; background-color: #000000; color: #D4AF37; 
+                              border: 1px solid #D4AF37; text-decoration: none; border-radius: 4px; 
+                              font-weight: bold; font-family: sans-serif; letter-spacing: 1px;">
+                       📥 DOWNLOAD MP4 SLIDES
+                    </a>
+                </div>
+                '''
+                
                 st.success(f"Successfully converted! Source FPS: {fps:.2f}")
                 
-                st.download_button(
-                    label="Click here to Download MP4",
-                    data=video_bytes,
-                    file_name="converted_slides.mp4",
-                    mime="video/mp4"
-                )
+                # Display the custom link
+                st.markdown(href, unsafe_allow_html=True)
 
             except Exception as e:
                 st.error(f"Error during processing: {e}")
